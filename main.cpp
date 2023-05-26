@@ -40,13 +40,18 @@ int main()
     my_graph.add_edge(v_3, v_6, 600);
     my_graph.add_edge(v_4, v_6, 600);
 
-    /*my_graph.add_edge(v_1, v_2, 10);
+    auto type_walk = std::bind(&Graph<FirstAidStation>::spread_walk, my_graph, std::placeholders::_1, std::placeholders::_2);
+
+    std::vector<FirstAidStation> v = my_graph.walk(v_1, type_walk);
+    std::cout << v;
+
+    my_graph.add_edge(v_1, v_2, 10);
     my_graph.add_edge(v_1, v_5, 100);
     my_graph.add_edge(v_1, v_4, 30);
     my_graph.add_edge(v_2, v_3, 50);
     my_graph.add_edge(v_3, v_5, 10);
     my_graph.add_edge(v_4, v_3, 20);
-    my_graph.add_edge(v_4, v_5, 60);*/
+    my_graph.add_edge(v_4, v_5, 60);
 
     // my_graph.remove_vertex(v_4);
     // my_graph.remove_edge(v_1, v_2);
@@ -55,7 +60,15 @@ int main()
 
     //    std::vector<FirstAidStation> v = my_graph.walk(v_1);
     // std::cout << v;
-    std::cout << my_graph.shortest_path(v_1, v_6);
+    // std::cout << my_graph.shortest_path(v_1, v_6);
+
+    auto start = my_graph.edges_begin(v_2);
+    auto stop = my_graph.edges_end(v_2);
+    while (start != stop)
+    {
+        std::cout << start->to.id << ":" << start->weight << ' ';
+        start++;
+    }
 
     // my_graph.shortest_path(v_1, v_4);
 

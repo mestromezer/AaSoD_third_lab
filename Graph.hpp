@@ -6,16 +6,10 @@
 #include <queue>
 #include <memory>
 
-enum Color
-{
-    white = 1,
-    grey = 2,
-    black = 3
-};
-
 template <typename Vertex, typename Distance = double>
 class Graph
 {
+private:
     std::vector<Vertex> verts;
 
     void set_cost_inf()
@@ -45,6 +39,7 @@ public:
         bool operator==(const Edge &src) { return (this->to == src.to && this->weight == src.weight); }
     };
 
+private:
     std::vector<Edge> find_path(const Vertex &from, const Vertex &to)
     {
         std::vector<Edge> path;
@@ -57,6 +52,7 @@ public:
         return path;
     }
 
+public:
     // проверка-добавление-удаление вершин
     bool has_vertex(const Vertex &v) const
     {
@@ -97,10 +93,20 @@ public:
 
         return true;
     }
-    std::vector<Vertex> vertices() const
+    /*std::vector<Vertex> vertices() const
     {
         std::vector<Vertex> res = verts;
         return res;
+    }*/
+    auto vertices_begin() const
+    {
+        auto it = verts.cbegin();
+        return it;
+    }
+    auto vertices_end() const
+    {
+        auto it = verts.cend();
+        return it;
     }
 
     // проверка-добавление-удаление ребер
@@ -132,20 +138,19 @@ public:
         }
         return false; // нету вершины куда
     }
-    /*bool remove_edge(const Edge &e) // c учетом расстояния
+    bool remove_edge(const Edge &e) // c учетом расстояния
     {
-        for (auto v : verts)
+        for (auto v = verts.begin(); v != verts.end(); v++)
         {
-            auto it = v.edges.begin();
-            std::find(it, v.edges.end(), e);
-            if (it != v.edges.end())
+            auto it = std::find(it, v.edges.end(), e);
+            if ((*it) == e)
             {
                 v.edges.erase(it);
                 return true;
             }
         }
         return false;
-    }*/
+    }
     bool has_edge(const Vertex &from, const Vertex &to) const
     {
         auto pt_from = std::find(verts.cbegin(), verts.cend(), from);
@@ -159,25 +164,24 @@ public:
         }
         return false; // нету вершины куда
     }
-    /*bool has_edge(const Edge &e) // с учетом расстояния
+    bool has_edge(const Edge &e) // с учетом расстояния
     {
-        for (auto v : verts)
+        for (auto v = verts.begin(); v != verts.end(); v++)
         {
             if (std::find(v.edges.begin(), v.edges.end(), e) == v.edges.end())
                 return true;
         }
         return false;
-    }*.
+    }
 
-    // получение всех ребер, выходящих из вершины
-    std::vector<Edge> edges(const Vertex &vertex)
+    /*std::vector<Edge> edges(const Vertex &vertex)
     {
         std::vector<Edge> data;
         auto vert = std::find(verts.begin(), verts.end(), vertex);
         for (auto edge = vert->edges.begin(); edge != vert->edges.end(); edge++)
             data.push_back((*edge));
         return data;
-    }
+    }*/
 
     int order() const // порядок
     {
@@ -201,7 +205,7 @@ public:
         return degrees.at(degrees.size() - 1);
     }
 
-    Distance count_direct_path(const Vertex &from,
+    /*Distance count_direct_path(const Vertex &from,
                                const Vertex &to) const
     {
         auto vert_from = std::find(verts.begin(), verts.end(), from);
@@ -211,40 +215,19 @@ public:
             throw PathDoesNotExist();
         else
             return pt->weight;
-    }
-
-    // поиск кратчайшего пути
-    /*std::vector<Edge> shortest_path(const Vertex &from, const Vertex &to)
-    {
-        if (!has_vertex(from) || !has_vertex(to))
-            throw NoVertFound();
-
-        auto start = std::find(verts.begin(), verts.end(), from); // vert to start from
-
-        for (auto it = verts.begin(); it != verts.end(); it++) // initialize first iteration
-        {
-            it->cost = INT32_MAX;
-            it->pred = nullptr;
-        }
-
-        start->cost = 0; // initialization finished {0 inf inf inf inf ... inf}
-
-        std::vector<Vertex> visited;
-        visited.push_back((*start)); // s = {1}
-
-        vector<Vertex> to_visit;
-
-        for (auto it = verts.begin(); it != verts.end(); it++)
-        {
-            if (it != start)
-                to_visit.push_back((*it)); // excluding start
-        }
-
-        while (to_visit.size() != 0)
-        {
-            std::sort(to_visit.begin(), to_visit.end(), comp()); // сортируем по цене пути
-        }
     }*/
+
+    // получение всех ребер, выходящих из вершины
+    auto edges_begin(const Vertex &vert) const
+    {
+        auto vertex = std::find(verts.begin(), verts.end(), vert);
+        return vertex->edges.cbegin();
+    }
+    auto edges_end(const Vertex &vert) const
+    {
+        auto vertex = std::find(verts.begin(), verts.end(), vert);
+        return vertex->edges.cend();
+    }
 
     std::vector<Edge> shortest_path(const Vertex &from, const Vertex &to)
     {
@@ -279,7 +262,7 @@ public:
                     if (newbie->cost > vert->cost + edge->weight)
                     {
                         newbie->cost = vert->cost + edge->weight;
-                        newbie->parrent = vert;
+                        (newbie->parrent) = std::make_shared<Vertex>(*vert);
                     }
                     q.push(edge->to); // paint in grey
                 }
@@ -291,7 +274,7 @@ public:
     }
 
     // обход
-    std::vector<Vertex> walk(const Vertex &start_vertex)
+    /*std::vector<Vertex> walk(const Vertex &start_vertex)
     {
         if (!has_vertex(start_vertex))
         {
@@ -325,17 +308,60 @@ public:
             }
         }
         return spreadly_walked;
+    }*/
+
+    void spread_walk(const Vertex &v, std::shared_ptr<queue<Vertex>> q_pt)
+    {
+        auto vert = std::find(verts.begin(), verts.end(), v);
+        vert->visited = true; // exclude circles
+        for (auto edge = vert->edges.begin(); edge != vert->edges.end(); edge++)
+        {
+            auto newbie = std::find(verts.begin(), verts.end(), edge->to);
+            if (!(newbie->visited))
+            {
+                q_pt->push(edge->to); // paint in grey
+            }
+        }
+    }
+
+    std::vector<Vertex> walk(const Vertex &start_vertex,
+                             std::function<void(const Vertex &, std::shared_ptr<queue<Vertex>>)> action)
+    {
+        if (!has_vertex(start_vertex))
+        {
+            throw NoVertFound();
+        }
+        set_visited_false();
+
+        auto ptr = std::find(verts.begin(), verts.end(), start_vertex);
+
+        std::vector<Vertex> spreadly_walked;
+
+        std::queue<Vertex> q; // in queue => grey color
+        auto q_pt = std::make_shared<std::queue<Vertex>>(q);
+        q_pt->push(*ptr);
+
+        while (!q_pt->empty())
+        {
+            auto verts_copy = q_pt->front();
+            auto vert = std::find(verts.begin(), verts.end(), verts_copy);
+            spreadly_walked.push_back(*vert);
+
+            q_pt->pop(); // delete from queue to visit
+
+            action(*vert, q_pt);
+        }
+        return spreadly_walked;
     }
 };
 
 struct FirstAidStation
 {
-    // Color c;
     int id;
     int cost;
     bool visited;
 
-    std::vector<FirstAidStation>::iterator parrent;
+    std::shared_ptr<FirstAidStation> parrent;
     std::vector<Graph<FirstAidStation, double>::Edge> edges;
 
     FirstAidStation(int id) : id(id) {}
