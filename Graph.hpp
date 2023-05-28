@@ -34,19 +34,31 @@ public:
         Vertex to;
         Distance weight;
 
-        Edge(Vertex to, Distance weight = Distance(0)) : to(to), weight(weight) {}
+        Edge(Vertex to, Distance weight = 0) : to(to), weight(weight) {}
+        Edge(const Edge &src) : to(src.to), weight(src.weight) {}
 
         bool operator==(const Edge &src) { return (this->to == src.to && this->weight == src.weight); }
+
+        void operator=(const Edge &src)
+        {
+            this->to = src.to;
+            this->weight = src.weight;
+        }
     };
 
 private:
     std::vector<Edge> find_path(const Vertex &from, const Vertex &to)
     {
         std::vector<Edge> path;
-        auto pt_from = std::find(verts.begin(), verts.end(), from);
-        for (pt_from; *(pt_from->parrent) != to; pt_from = std::find(verts.begin(), verts.end(), (*pt_from->parrent)))
+        auto pt_to = std::find(verts.begin(), verts.end(), from);
+        auto pt_from = std::find(verts.begin(), verts.end(), *(pt_to->parrent));
+        while (pt_to != std::find(verts.begin(), verts.end(), to))
         {
-            path.push_back(*(pt_from->parrent));
+            auto edge = std::find_if(pt_from->edges.begin(), pt_from->edges.end(), [pt_to](const Edge &e_from)
+                                     { return e_from.to == (*pt_to); });
+            path.push_back((*edge));
+            pt_to = std::find(verts.begin(), verts.end(), (*pt_from));
+            pt_from = std::find(verts.begin(), verts.end(), *(pt_to->parrent));
         }
         std::reverse(path.begin(), path.end());
         return path;
@@ -115,12 +127,10 @@ public:
     {
         if (!has_vertex(from) || !has_vertex(to))
             throw NoVertFound();
-        auto _from = std::find(verts.begin(), verts.end(), from);
-        _from->edges.push_back(Edge(to, d));
 
-        /*auto test = std::find(verts.begin(), verts.end(), to);
-        test->cost = 999;
-        std::cout << '!';*/
+        auto _from = std::find(verts.begin(), verts.end(), from);
+        auto edge = Edge(to, d);
+        _from->edges.push_back(edge);
     }
     bool remove_edge(const Vertex &from, const Vertex &to)
     {
@@ -142,10 +152,10 @@ public:
     {
         for (auto v = verts.begin(); v != verts.end(); v++)
         {
-            auto it = std::find(it, v.edges.end(), e);
+            auto it = std::find(v->edges.begin(), v->edges.end(), e);
             if ((*it) == e)
             {
-                v.edges.erase(it);
+                v->edges.erase(it);
                 return true;
             }
         }
@@ -168,7 +178,7 @@ public:
     {
         for (auto v = verts.begin(); v != verts.end(); v++)
         {
-            if (std::find(v.edges.begin(), v.edges.end(), e) == v.edges.end())
+            if (std::find(v->edges.begin(), v->edges.end(), e) == v->edges.end())
                 return true;
         }
         return false;
@@ -241,6 +251,7 @@ public:
         set_cost_inf();
 
         auto ptr = std::find(verts.begin(), verts.end(), from); // vert to start
+        ptr->parrent = std::make_shared<Vertex>((*ptr));
         ptr->cost = 0;
 
         std::queue<Vertex> q; // in queue => grey color
@@ -269,7 +280,7 @@ public:
             }
         }
 
-        std::vector<Edge> path = find_path(to, from);
+        std::vector<Edge> path(find_path(to, from));
         return path;
     }
 
@@ -353,6 +364,36 @@ public:
         }
         return spreadly_walked;
     }
+
+    int complete_task()
+    {
+        if (verts.size() == 0)
+            throw EmptyGraph();
+
+        int max = INT32_MIN;
+        int max_id = verts[0].id;
+        for (auto i = verts.begin(); i != verts.end(); i++)
+        {
+            int sum = 0;
+            for (auto j = i->edges.begin(); j != i->edges.end(); j++)
+            {
+                sum += j->weight;
+            }
+            for (auto j = verts.begin(); j != verts.end(); j++)
+            {
+                if (has_edge(j->id, i->id))
+                    sum += std::find_if(j->edges.begin(), j->edges.end(), [i](const Edge &edge)
+                                        { return edge.to == (*i); })
+                               ->weight;
+            }
+            if (max < sum)
+            {
+                max = sum;
+                max_id = i->id;
+            }
+        }
+        return max_id;
+    }
 };
 
 struct FirstAidStation
@@ -364,7 +405,26 @@ struct FirstAidStation
     std::shared_ptr<FirstAidStation> parrent;
     std::vector<Graph<FirstAidStation, double>::Edge> edges;
 
-    FirstAidStation(int id) : id(id) {}
+    FirstAidStation()
+    {
+        this->id = -1;
+        this->parrent = nullptr;
+        this->cost = 0;
+        this->visited = false;
+    }
+
+    FirstAidStation(int id)
+    {
+        if (id > 0)
+        {
+            this->id = id;
+            this->parrent = nullptr;
+            this->cost = 0;
+            this->visited = false;
+        }
+        else
+            throw NotValidID();
+    }
     FirstAidStation(const FirstAidStation &src)
     {
         this->cost = src.cost;
@@ -374,7 +434,7 @@ struct FirstAidStation
         this->visited = src.visited;
     }
 
-    FirstAidStation &operator=(const FirstAidStation &src)
+    FirstAidStation operator=(const FirstAidStation &src)
     {
         this->cost = src.cost;
         this->edges = src.edges;
