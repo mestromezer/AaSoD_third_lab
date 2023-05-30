@@ -261,22 +261,22 @@ public:
         {
             auto verts_copy = q.front();
             auto vert = std::find(verts.begin(), verts.end(), verts_copy);
-            vert->visited = true; // exclude circles
+            // vert->visited = true;  exclude circles
 
             q.pop(); // delete from queue to visit
 
             for (auto edge = vert->edges.begin(); edge != vert->edges.end(); edge++)
             {
                 auto newbie = std::find(verts.begin(), verts.end(), edge->to);
-                if (!(newbie->visited))
+                /*if (!(newbie->visited))
+                {*/
+                if (newbie->cost > vert->cost + edge->weight)
                 {
-                    if (newbie->cost > vert->cost + edge->weight)
-                    {
-                        newbie->cost = vert->cost + edge->weight;
-                        (newbie->parrent) = std::make_shared<Vertex>(*vert);
-                    }
-                    q.push(edge->to); // paint in grey
+                    newbie->cost = vert->cost + edge->weight;
+                    (newbie->parrent) = std::make_shared<Vertex>(*vert);
                 }
+                q.push(edge->to); // paint in grey
+                //}
             }
         }
 
@@ -368,10 +368,10 @@ public:
     int complete_task()
     {
         if (verts.size() == 0)
-            throw EmptyGraph();
+            throw NoVertFound("Graph is empty");
 
         int max = INT32_MIN;
-        int max_id = verts[0].id;
+        int max_id = verts.at(0).id;
         for (auto i = verts.begin(); i != verts.end(); i++)
         {
             int sum = 0;
@@ -396,16 +396,16 @@ public:
     }
 };
 
-struct FirstAidStation
+struct SeilingPoint
 {
     int id;
     int cost;
     bool visited;
 
-    std::shared_ptr<FirstAidStation> parrent;
-    std::vector<Graph<FirstAidStation, double>::Edge> edges;
+    std::shared_ptr<SeilingPoint> parrent;
+    std::vector<Graph<SeilingPoint, double>::Edge> edges;
 
-    FirstAidStation()
+    SeilingPoint()
     {
         this->id = -1;
         this->parrent = nullptr;
@@ -413,7 +413,7 @@ struct FirstAidStation
         this->visited = false;
     }
 
-    FirstAidStation(int id)
+    SeilingPoint(int id)
     {
         if (id > 0)
         {
@@ -425,7 +425,7 @@ struct FirstAidStation
         else
             throw NotValidID();
     }
-    FirstAidStation(const FirstAidStation &src)
+    SeilingPoint(const SeilingPoint &src)
     {
         this->cost = src.cost;
         this->edges = src.edges;
@@ -434,7 +434,7 @@ struct FirstAidStation
         this->visited = src.visited;
     }
 
-    FirstAidStation operator=(const FirstAidStation &src)
+    SeilingPoint operator=(const SeilingPoint &src)
     {
         this->cost = src.cost;
         this->edges = src.edges;
@@ -444,11 +444,11 @@ struct FirstAidStation
         return *this;
     }
 
-    bool operator==(const FirstAidStation &src) const
+    bool operator==(const SeilingPoint &src) const
     {
         return (this->id == src.id);
     }
-    bool operator!=(const FirstAidStation &src) const
+    bool operator!=(const SeilingPoint &src) const
     {
         return (this->id != src.id);
     }
