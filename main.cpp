@@ -28,7 +28,7 @@ char _getch(void)
     return buf;
 }
 
-ostream &operator<<(ostream &s, std::vector<SeilingPoint> v)
+ostream &operator<<(ostream &s, std::vector<FirstAidStation> v)
 {
     for (auto el : v)
     {
@@ -38,7 +38,7 @@ ostream &operator<<(ostream &s, std::vector<SeilingPoint> v)
     return s;
 }
 
-ostream &operator<<(ostream &s, std::vector<Graph<SeilingPoint>::Edge> edges)
+ostream &operator<<(ostream &s, std::vector<Graph<FirstAidStation>::Edge> edges)
 {
     for (auto el : edges)
     {
@@ -50,16 +50,16 @@ ostream &operator<<(ostream &s, std::vector<Graph<SeilingPoint>::Edge> edges)
 
 class Menu
 {
-    SeilingPoint create_FirstAidStation()
+    FirstAidStation create_FirstAidStation()
     {
         int id = 0;
         std::cout << "Input ID for first aid station to add: ";
         std::cin >> id;
-        return SeilingPoint(id);
+        return FirstAidStation(id);
     }
     void remove_edge_weight()
     {
-        SeilingPoint A, B;
+        FirstAidStation A, B;
         double weight;
         std::cout << "Point A:" << std::endl;
         A = create_FirstAidStation();
@@ -78,7 +78,7 @@ class Menu
     }
     bool has_edge_weight()
     {
-        SeilingPoint A, B;
+        FirstAidStation A, B;
         double weight;
         std::cout << "Point A:" << std::endl;
         A = create_FirstAidStation();
@@ -115,7 +115,7 @@ class Menu
             }
         }
     }
-    Graph<SeilingPoint> my_graph;
+    Graph<FirstAidStation> my_graph;
 
 public:
     void displayOptions()
@@ -142,7 +142,7 @@ public:
 
     void handleOption(int option)
     {
-        SeilingPoint A, B;
+        FirstAidStation A, B;
         double weight;
         system("clear");
         try
@@ -222,7 +222,7 @@ public:
                 std::cout << "Walk spreadly from the first aid station" << std::endl;
                 std::cout << "Give id of the FAS:" << std::endl;
                 A = create_FirstAidStation();
-                std::cout << my_graph.walk(A, std::bind(&Graph<SeilingPoint>::spread_walk, my_graph, std::placeholders::_1, std::placeholders::_2));
+                std::cout << my_graph.walk(A, std::bind(&Graph<FirstAidStation>::straight_walk, my_graph, std::placeholders::_1, std::placeholders::_2));
                 break;
             case 114:
                 std::cout << "Complete task" << std::endl;

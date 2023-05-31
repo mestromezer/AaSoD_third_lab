@@ -321,32 +321,16 @@ public:
         return spreadly_walked;
     }*/
 
-    void spread_walk(const Vertex &v, std::shared_ptr<queue<Vertex>> q_pt)
-    {
-        auto vert = std::find(verts.begin(), verts.end(), v);
-        vert->visited = true; // exclude circles
-        for (auto edge = vert->edges.begin(); edge != vert->edges.end(); edge++)
-        {
-            auto newbie = std::find(verts.begin(), verts.end(), edge->to);
-            if (!(newbie->visited))
-            {
-                q_pt->push(edge->to); // paint in grey
-            }
-        }
-    }
-
-    std::vector<Vertex> walk(const Vertex &start_vertex,
-                             std::function<void(const Vertex &, std::shared_ptr<queue<Vertex>>)> action)
+    std::vector<Vertex> spread_walk(const Vertex &start_vertex)
     {
         if (!has_vertex(start_vertex))
         {
             throw NoVertFound();
         }
-        set_visited_false();
 
         auto ptr = std::find(verts.begin(), verts.end(), start_vertex);
 
-        std::vector<Vertex> spreadly_walked;
+        std::vector<Vertex> walked;
 
         std::queue<Vertex> q; // in queue => grey color
         auto q_pt = std::make_shared<std::queue<Vertex>>(q);
@@ -356,13 +340,50 @@ public:
         {
             auto verts_copy = q_pt->front();
             auto vert = std::find(verts.begin(), verts.end(), verts_copy);
-            spreadly_walked.push_back(*vert);
+            walked.push_back(*vert);
 
-            q_pt->pop(); // delete from queue to visit
-
-            action(*vert, q_pt);
+            q_pt->pop();          // delete from queue to visit
+            vert->visited = true; // exclude circles
+            for (auto edge = vert->edges.begin(); edge != vert->edges.end(); edge++)
+            {
+                auto newbie = std::find(verts.begin(), verts.end(), edge->to);
+                if (!(newbie->visited))
+                {
+                    q_pt->push(edge->to); // paint in grey
+                }
+            }
         }
-        return spreadly_walked;
+        return walked;
+    }
+
+    void straight_walk(const Vertex &start_vertex, std::shared_ptr<std::vector<Vertex>> walker)
+    {
+        auto vert = std::find(verts.begin(), verts.end(), start_vertex);
+        if (!vert->visited)
+            walker->push_back(*vert);
+
+        vert->visited = true; // exclude circles
+
+        for (auto edge = vert->edges.begin(); edge != vert->edges.end(); edge++)
+        {
+            if (!edge->to.visited)
+                straight_walk(edge->to, walker);
+            /*auto newbie = std::find(verts.begin(), verts.end(), edge->to);
+            if (!(newbie->visited))
+            {
+                walker.push_back(*vert);
+            }*/
+        }
+    }
+
+    std::vector<Vertex> walk(const Vertex &start_vertex,
+                             std::function<void(const Vertex &, std::shared_ptr<std::vector<Vertex>>)> action)
+    {
+        set_visited_false();
+        std::vector<Vertex> walker;
+        std::shared_ptr<std::vector<Vertex>> pt_walker = std::make_shared<std::vector<Vertex>>(walker);
+        action(start_vertex, pt_walker);
+        return *pt_walker;
     }
 
     int complete_task()
@@ -396,16 +417,16 @@ public:
     }
 };
 
-struct SeilingPoint
+struct FirstAidStation
 {
     int id;
     int cost;
     bool visited;
 
-    std::shared_ptr<SeilingPoint> parrent;
-    std::vector<Graph<SeilingPoint, double>::Edge> edges;
+    std::shared_ptr<FirstAidStation> parrent;
+    std::vector<Graph<FirstAidStation, double>::Edge> edges;
 
-    SeilingPoint()
+    FirstAidStation()
     {
         this->id = -1;
         this->parrent = nullptr;
@@ -413,7 +434,7 @@ struct SeilingPoint
         this->visited = false;
     }
 
-    SeilingPoint(int id)
+    FirstAidStation(int id)
     {
         if (id > 0)
         {
@@ -425,7 +446,7 @@ struct SeilingPoint
         else
             throw NotValidID();
     }
-    SeilingPoint(const SeilingPoint &src)
+    FirstAidStation(const FirstAidStation &src)
     {
         this->cost = src.cost;
         this->edges = src.edges;
@@ -434,7 +455,7 @@ struct SeilingPoint
         this->visited = src.visited;
     }
 
-    SeilingPoint operator=(const SeilingPoint &src)
+    FirstAidStation operator=(const FirstAidStation &src)
     {
         this->cost = src.cost;
         this->edges = src.edges;
@@ -444,11 +465,11 @@ struct SeilingPoint
         return *this;
     }
 
-    bool operator==(const SeilingPoint &src) const
+    bool operator==(const FirstAidStation &src) const
     {
         return (this->id == src.id);
     }
-    bool operator!=(const SeilingPoint &src) const
+    bool operator!=(const FirstAidStation &src) const
     {
         return (this->id != src.id);
     }
